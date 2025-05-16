@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -17,28 +17,64 @@ type App = {
   description: string;
 };
 
-const mockApps: App[] = [
-  {
-    id: 1,
-    name: "MonApp",
-    description: "Application interne RH",
-  },
-];
-
 export default function ApplicationsPage() {
-  const [apps, setApps] = useState<App[]>(mockApps);
+  const [apps, setApps] = useState<App[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<App | null>(null);
 
-  const handleSave = (app: App) => {
+  const fetchApps = async () => {
+    const res = await fetch("http://localhost:3000/applications");
+    const data = await res.json();
+    setApps(data);
+  };
+
+  useEffect(() => {
+    fetchApps();
+  }, []);
+
+  const handleSave = async (app: Partial<App>) => {
+    const isEdit = !!editingApp;
+
+    const res = await fetch(
+      isEdit
+        ? `http://localhost:3000/applications/${editingApp?.id}`
+        : "http://localhost:3000/applications",
+      {
+        method: isEdit ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: app.name,
+          description: app.description,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Failed to save application");
+      return;
+    }
+
+    const updatedApp = await res.json();
+
     setApps((prev) => {
-      const exists = prev.some((a) => a.id === app.id);
-      if (exists) {
-        return prev.map((a) => (a.id === app.id ? app : a));
+      if (isEdit) {
+        return prev.map((a) => (a.id === updatedApp.id ? updatedApp : a));
       } else {
-        return [...prev, app];
+        return [...prev, updatedApp];
       }
     });
+
+    setDialogOpen(false);
+    setEditingApp(null);
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`http://localhost:3000/applications/${id}`, {
+      method: "DELETE",
+    });
+    setApps((prev) => prev.filter((a) => a.id !== id));
   };
 
   const openCreate = () => {
@@ -84,7 +120,7 @@ export default function ApplicationsPage() {
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => setApps(apps.filter((a) => a.id !== app.id))}
+                  onClick={() => handleDelete(app.id)}
                 >
                   Delete
                 </Button>
@@ -96,7 +132,10 @@ export default function ApplicationsPage() {
 
       <AppFormDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditingApp(null);
+        }}
         onSave={handleSave}
         initialData={editingApp}
       />

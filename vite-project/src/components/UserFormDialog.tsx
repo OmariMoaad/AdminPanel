@@ -1,12 +1,7 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,22 +10,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
 
 type User = {
-  id: number;
+  id?: number;
   name: string;
   email: string;
   role: "admin" | "viewer";
   isActive: boolean;
-  createdAt: string;
 };
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (user: User) => void;
-  initialData?: User | null;
+  initialData: User | null;
 };
 
 export default function UserFormDialog({
@@ -39,78 +33,77 @@ export default function UserFormDialog({
   onSave,
   initialData,
 }: Props) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "viewer">("viewer");
+  const [formData, setFormData] = useState<User>({
+    name: "",
+    email: "",
+    role: "viewer",
+    isActive: true,
+  });
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name);
-      setEmail(initialData.email);
-      setRole(initialData.role);
+      setFormData(initialData);
     } else {
-      setName("");
-      setEmail("");
-      setRole("viewer");
+      setFormData({
+        name: "",
+        email: "",
+        role: "viewer",
+        isActive: true,
+      });
     }
   }, [initialData]);
 
+  const handleChange = (field: keyof User, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = () => {
-    const newUser: User = {
-      id: initialData?.id || Date.now(), // simulate ID
-      name,
-      email,
-      role,
-      isActive: true,
-      createdAt: initialData?.createdAt || new Date().toISOString(),
-    };
-    onSave(newUser);
-    onClose();
+    onSave(formData);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{initialData ? "Edit User" : "Add User"}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Email</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Role</Label>
-            <Select
-              value={role}
-              onValueChange={(value) => setRole(value as "admin" | "viewer")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <DialogContent className="space-y-4">
+        <div>
+          <Label>Name</Label>
+          <Input
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+          />
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>
-            {initialData ? "Update" : "Create"}
-          </Button>
-        </DialogFooter>
+        <div>
+          <Label>Email</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Role</Label>
+          <Select
+            value={formData.role}
+            onValueChange={(value) => handleChange("role", value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label>Status</Label>
+          <Switch
+            checked={formData.isActive}
+            onCheckedChange={(value) => handleChange("isActive", value)}
+          />
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit}>Save</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

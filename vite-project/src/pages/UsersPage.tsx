@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/UsersPage.tsx
+import { useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -9,42 +10,65 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import UserFormDialog from "@/components/UserFormDialog"; // path based on your structure
+import UserFormDialog from "@/components/UserFormDialog";
 
 type User = {
-  id: number;
+  id?: number;
   name: string;
   email: string;
   role: "admin" | "viewer";
   isActive: boolean;
-  createdAt: string;
+  createdAt?: string;
 };
 
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: "Alice",
-    email: "alice@example.com",
-    role: "admin",
-    isActive: true,
-    createdAt: "2024-12-01T12:00:00Z",
-  },
-];
-
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const handleSave = (user: User) => {
+  const fetchUsers = async () => {
+    const res = await fetch("http://localhost:3000/users");
+    const data = await res.json();
+    setUsers(data);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleSave = async (user: User) => {
+    const isEditing = Boolean(user.id);
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing
+      ? `http://localhost:3000/users/${user.id}`
+      : "http://localhost:3000/users";
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    });
+
+    const updatedUser = await res.json();
+
     setUsers((prev) => {
-      const exists = prev.some((u) => u.id === user.id);
-      if (exists) {
-        return prev.map((u) => (u.id === user.id ? user : u));
+      if (isEditing) {
+        return prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
       } else {
-        return [...prev, user];
+        return [...prev, updatedUser];
       }
     });
+
+    setDialogOpen(false);
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`http://localhost:3000/users/${id}`, {
+      method: "DELETE",
+    });
+    setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
   const openCreate = () => {
@@ -84,7 +108,9 @@ export default function UsersPage() {
               <TableCell>{user.role}</TableCell>
               <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
               <TableCell>
-                {new Date(user.createdAt).toLocaleDateString()}
+                {user.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString()
+                  : "-"}
               </TableCell>
               <TableCell>
                 <Button
@@ -98,9 +124,7 @@ export default function UsersPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() =>
-                    setUsers(users.filter((u) => u.id !== user.id))
-                  }
+                  onClick={() => handleDelete(user.id!)}
                 >
                   Delete
                 </Button>
