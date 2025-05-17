@@ -16,20 +16,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
+type Permission = {
+  id?: number; // Optional id for existing permissions
+  userId: number;
+  applicationId: number; // Changed from appId to applicationId
+  role: "viewer" | "admin";
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (permission: {
-    userId: number;
-    appId: number;
-    role: "viewer" | "admin";
-  }) => void;
+  onSave: (permission: Permission) => void;
+  onDelete: (permissionId: number) => void;
   userId: number;
-  existingPermissions: {
-    userId: number;
-    appId: number;
-    role: "viewer" | "admin";
-  }[];
+  existingPermissions: Permission[];
   apps: { id: number; name: string }[];
 };
 
@@ -37,18 +37,21 @@ export default function PermissionFormDialog({
   open,
   onClose,
   onSave,
+  onDelete,
   userId,
   existingPermissions,
   apps,
 }: Props) {
   const [selectedRoles, setSelectedRoles] = useState<
-    Record<number, "viewer" | "admin" | "">
+    Record<number, "viewer" | "admin" | "remove" | "">
   >({});
 
   useEffect(() => {
-    const initial: Record<number, "viewer" | "admin" | ""> = {};
+    const initial: Record<number, "viewer" | "admin" | "remove" | ""> = {};
     apps.forEach((app) => {
-      const existing = existingPermissions.find((p) => p.appId === app.id);
+      const existing = existingPermissions.find(
+        (p) => p.applicationId === app.id
+      );
       initial[app.id] = existing?.role || "";
     });
     setSelectedRoles(initial);
@@ -56,10 +59,18 @@ export default function PermissionFormDialog({
 
   const handleSave = () => {
     for (const [appIdStr, role] of Object.entries(selectedRoles)) {
-      if (role) {
+      const applicationId = parseInt(appIdStr);
+      if (role === "remove") {
+        const existing = existingPermissions.find(
+          (p) => p.applicationId === applicationId
+        );
+        if (existing?.id) {
+          onDelete(existing.id);
+        }
+      } else if (role) {
         onSave({
           userId,
-          appId: parseInt(appIdStr),
+          applicationId,
           role,
         });
       }
@@ -79,11 +90,11 @@ export default function PermissionFormDialog({
             <div key={app.id}>
               <Label>{app.name}</Label>
               <Select
-                value={selectedRoles[app.id]}
+                value={selectedRoles[app.id] || ""}
                 onValueChange={(value) =>
                   setSelectedRoles((prev) => ({
                     ...prev,
-                    [app.id]: value as "viewer" | "admin",
+                    [app.id]: value as "viewer" | "admin" | "remove" | "",
                   }))
                 }
               >
@@ -91,8 +102,10 @@ export default function PermissionFormDialog({
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">None</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="remove">Remove</SelectItem>
                 </SelectContent>
               </Select>
             </div>

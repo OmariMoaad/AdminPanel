@@ -12,7 +12,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { Application } from '@prisma/client';
 
-@Controller('applications')
+@Controller('application')
 export class ApplicationController {
   constructor(private readonly applicationService: ApplicationService) {}
 

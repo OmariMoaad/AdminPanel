@@ -13,7 +13,7 @@ import { User as UserModel } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
 
 
-@Controller('users')
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

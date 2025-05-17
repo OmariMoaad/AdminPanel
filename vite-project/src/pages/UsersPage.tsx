@@ -27,7 +27,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const fetchUsers = async () => {
-    const res = await fetch("http://localhost:3000/users");
+    const res = await fetch("http://localhost:3000/user");
     const data = await res.json();
     setUsers(data);
   };
@@ -40,8 +40,8 @@ export default function UsersPage() {
     const isEditing = Boolean(user.id);
     const method = isEditing ? "PUT" : "POST";
     const url = isEditing
-      ? `http://localhost:3000/users/${user.id}`
-      : "http://localhost:3000/users";
+      ? `http://localhost:3000/user/${user.id}`
+      : "http://localhost:3000/user";
 
     const res = await fetch(url, {
       method,
@@ -65,7 +65,7 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`http://localhost:3000/users/${id}`, {
+    await fetch(`http://localhost:3000/user/${id}`, {
       method: "DELETE",
     });
     setUsers((prev) => prev.filter((u) => u.id !== id));

@@ -23,7 +23,7 @@ export default function ApplicationsPage() {
   const [editingApp, setEditingApp] = useState<App | null>(null);
 
   const fetchApps = async () => {
-    const res = await fetch("http://localhost:3000/applications");
+    const res = await fetch("http://localhost:3000/application");
     const data = await res.json();
     setApps(data);
   };
@@ -37,8 +37,8 @@ export default function ApplicationsPage() {
 
     const res = await fetch(
       isEdit
-        ? `http://localhost:3000/applications/${editingApp?.id}`
-        : "http://localhost:3000/applications",
+        ? `http://localhost:3000/application/${editingApp?.id}`
+        : "http://localhost:3000/application",
       {
         method: isEdit ? "PATCH" : "POST",
         headers: {
@@ -71,7 +71,7 @@ export default function ApplicationsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`http://localhost:3000/applications/${id}`, {
+    await fetch(`http://localhost:3000/application/${id}`, {
       method: "DELETE",
     });
     setApps((prev) => prev.filter((a) => a.id !== id));
