@@ -17,10 +17,16 @@ type App = {
   description: string;
 };
 
-export default function ApplicationsPage() {
+type Props = {
+  userRole: "admin" | "viewer";
+};
+
+export default function ApplicationsPage({ userRole }: Props) {
   const [apps, setApps] = useState<App[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<App | null>(null);
+
+  const isViewer = userRole === "viewer";
 
   const fetchApps = async () => {
     const res = await fetch("http://localhost:3000/application");
@@ -91,7 +97,9 @@ export default function ApplicationsPage() {
     <Card className="p-4">
       <div className="flex justify-between mb-4">
         <h2 className="text-xl font-semibold">Applications</h2>
-        <Button onClick={openCreate}>Add Application</Button>
+        <Button onClick={openCreate} disabled={isViewer}>
+          Add Application
+        </Button>
       </div>
 
       <Table>
@@ -114,6 +122,7 @@ export default function ApplicationsPage() {
                   variant="outline"
                   className="mr-2"
                   onClick={() => openEdit(app)}
+                  disabled={isViewer}
                 >
                   Edit
                 </Button>
@@ -121,6 +130,7 @@ export default function ApplicationsPage() {
                   size="sm"
                   variant="destructive"
                   onClick={() => handleDelete(app.id)}
+                  disabled={isViewer}
                 >
                   Delete
                 </Button>

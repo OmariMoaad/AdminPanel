@@ -23,9 +23,9 @@ function App() {
       case "users":
         return <UsersPage userRole={user?.role ?? "viewer"} />;
       case "applications":
-        return <ApplicationsPage />;
+        return <ApplicationsPage userRole={user?.role ?? "viewer"} />;
       case "permissions":
-        return <PermissionsPage />;
+        return <PermissionsPage userRole={user?.role ?? "viewer"} />;
       default:
         return null;
     }

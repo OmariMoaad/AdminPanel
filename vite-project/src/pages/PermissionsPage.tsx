@@ -30,9 +30,13 @@ type Permission = {
   role: "viewer" | "admin";
 };
 
+type Props = {
+  userRole: "admin" | "viewer";
+};
+
 const API_BASE_URL = "http://localhost:3000";
 
-export default function PermissionsPage() {
+export default function PermissionsPage({ userRole }: Props) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [apps, setApps] = useState<Application[]>([]);
@@ -41,7 +45,6 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch users, apps, and permissions on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -52,9 +55,7 @@ export default function PermissionsPage() {
             axios.get(`${API_BASE_URL}/application`),
             axios.get(`${API_BASE_URL}/permission`),
           ]);
-        console.log("Fetched users:", usersResponse.data); // Debug
-        console.log("Fetched apps:", appsResponse.data); // Debug
-        console.log("Fetched permissions:", permissionsResponse.data); // Debug
+
         if (
           !Array.isArray(usersResponse.data) ||
           !Array.isArray(appsResponse.data) ||
@@ -62,6 +63,7 @@ export default function PermissionsPage() {
         ) {
           throw new Error("Invalid data format from server");
         }
+
         setUsers(usersResponse.data);
         setApps(appsResponse.data);
         setPermissions(permissionsResponse.data);
@@ -76,7 +78,6 @@ export default function PermissionsPage() {
   }, []);
 
   const handleOpenDialog = (userId: number) => {
-    console.log("Opening dialog for user ID:", userId); // Debug
     setSelectedUser(userId);
     setDialogOpen(true);
   };
@@ -85,7 +86,6 @@ export default function PermissionsPage() {
     newPermission: Omit<Permission, "id">
   ) => {
     try {
-      console.log("Saving permission:", newPermission); // Debug
       const existingPerm = permissions.find(
         (p) =>
           p.userId === newPermission.userId &&
@@ -93,7 +93,6 @@ export default function PermissionsPage() {
       );
 
       if (existingPerm) {
-        // Update existing permission
         const response = await axios.patch(
           `${API_BASE_URL}/permission/${existingPerm.id}`,
           newPermission
@@ -102,7 +101,6 @@ export default function PermissionsPage() {
           prev.map((p) => (p.id === existingPerm.id ? response.data : p))
         );
       } else {
-        // Create new permission
         const response = await axios.post(
           `${API_BASE_URL}/permission`,
           newPermission
@@ -118,7 +116,6 @@ export default function PermissionsPage() {
 
   const handleDeletePermission = async (permissionId: number) => {
     try {
-      console.log("Deleting permission ID:", permissionId); // Debug
       await axios.delete(`${API_BASE_URL}/permission/${permissionId}`);
       setPermissions((prev) => prev.filter((p) => p.id !== permissionId));
     } catch (error) {
@@ -160,7 +157,11 @@ export default function PermissionsPage() {
                 return <TableCell key={app.id}>{perm?.role || "-"}</TableCell>;
               })}
               <TableCell>
-                <Button size="sm" onClick={() => handleOpenDialog(user.id)}>
+                <Button
+                  size="sm"
+                  onClick={() => handleOpenDialog(user.id)}
+                  disabled={userRole === "viewer"}
+                >
                   Manage
                 </Button>
               </TableCell>
