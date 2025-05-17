@@ -9,6 +9,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import UserFormDialog from "@/components/UserFormDialog";
 
 type User = {
@@ -18,7 +26,7 @@ type User = {
   role: "admin" | "viewer";
   isActive: boolean;
   createdAt?: string;
-  password?: string; 
+  password?: string;
 };
 
 type Props = {
@@ -29,6 +37,10 @@ export default function UsersPage({ userRole }: Props) {
   const [users, setUsers] = useState<User[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchUsers = async () => {
     const res = await fetch("http://localhost:3000/user");
@@ -95,13 +107,62 @@ export default function UsersPage({ userRole }: Props) {
     setDialogOpen(true);
   };
 
+  const filteredUsers = users.filter((user) => {
+    const keyword = search.toLowerCase();
+
+    const matchSearch =
+      user.name.toLowerCase().includes(keyword) ||
+      user.email.toLowerCase().includes(keyword);
+
+    const matchRole = roleFilter === "all" ? true : user.role === roleFilter;
+
+    const matchStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "active"
+        ? user.isActive
+        : !user.isActive;
+
+    return matchSearch && matchRole && matchStatus;
+  });
+
   return (
     <Card className="p-4">
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Users</h2>
         <Button onClick={openCreate} disabled={userRole === "viewer"}>
           Add User
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Input
+          placeholder="Search by name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="viewer">Viewer</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Table>
@@ -117,7 +178,7 @@ export default function UsersPage({ userRole }: Props) {
         </TableHeader>
 
         <TableBody>
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
