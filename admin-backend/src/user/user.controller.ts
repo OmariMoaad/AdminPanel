@@ -51,11 +51,12 @@ export class UserController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto): Promise<UserModel> {
-    const user = await this.userService.login(loginDto.email);
+    const user = await this.userService.login(
+      loginDto.email,
+      loginDto.password,
+    );
     if (!user) {
-      throw new NotFoundException(
-        `User with email ${loginDto.email} not found`,
-      );
+      throw new NotFoundException(`Invalid email or password`);
     }
     return user;
   }

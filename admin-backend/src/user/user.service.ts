@@ -4,7 +4,7 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<User[]> {
     return this.prisma.user.findMany();
@@ -26,7 +26,15 @@ export class UserService {
     return this.prisma.user.delete({ where: { id } });
   }
 
-  async login(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+  async login(email: string, password: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) return null;
+
+    if (user.password !== password) return null;
+
+    return user;
   }
 }
