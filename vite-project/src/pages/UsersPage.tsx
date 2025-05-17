@@ -1,4 +1,3 @@
-// src/pages/UsersPage.tsx
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -19,17 +18,26 @@ type User = {
   role: "admin" | "viewer";
   isActive: boolean;
   createdAt?: string;
+  password?: string; 
 };
 
-export default function UsersPage() {
+type Props = {
+  userRole: "admin" | "viewer";
+};
+
+export default function UsersPage({ userRole }: Props) {
   const [users, setUsers] = useState<User[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const fetchUsers = async () => {
     const res = await fetch("http://localhost:3000/user");
-    const data = await res.json();
-    setUsers(data);
+    if (res.ok) {
+      const data = await res.json();
+      setUsers(data);
+    } else {
+      console.error("Failed to fetch users");
+    }
   };
 
   useEffect(() => {
@@ -43,32 +51,38 @@ export default function UsersPage() {
       ? `http://localhost:3000/user/${user.id}`
       : "http://localhost:3000/user";
 
+    const payload = { ...user };
+    if (isEditing) {
+      delete payload.password;
+    }
+
     const res = await fetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify(payload),
     });
 
-    const updatedUser = await res.json();
+    if (!res.ok) {
+      console.error("Failed to save user");
+      return;
+    }
 
-    setUsers((prev) => {
-      if (isEditing) {
-        return prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
-      } else {
-        return [...prev, updatedUser];
-      }
-    });
-
+    await fetchUsers();
     setDialogOpen(false);
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`http://localhost:3000/user/${id}`, {
+    const res = await fetch(`http://localhost:3000/user/${id}`, {
       method: "DELETE",
     });
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } else {
+      console.error("Failed to delete user");
+    }
   };
 
   const openCreate = () => {
@@ -85,7 +99,9 @@ export default function UsersPage() {
     <Card className="p-4">
       <div className="flex justify-between mb-4">
         <h2 className="text-xl font-semibold">Users</h2>
-        <Button onClick={openCreate}>Add User</Button>
+        <Button onClick={openCreate} disabled={userRole === "viewer"}>
+          Add User
+        </Button>
       </div>
 
       <Table>
@@ -118,6 +134,7 @@ export default function UsersPage() {
                   size="sm"
                   onClick={() => openEdit(user)}
                   className="mr-2"
+                  disabled={userRole === "viewer"}
                 >
                   Edit
                 </Button>
@@ -125,6 +142,7 @@ export default function UsersPage() {
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDelete(user.id!)}
+                  disabled={userRole === "viewer"}
                 >
                   Delete
                 </Button>

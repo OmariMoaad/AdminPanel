@@ -6,7 +6,13 @@ import PermissionsPage from "@/pages/PermissionsPage";
 import LoginPage from "@/pages/LoginPage";
 
 type View = "users" | "applications" | "permissions";
-type User = { id: number; name: string; email: string };
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: "admin" | "viewer";
+};
 
 function App() {
   const [view, setView] = useState<View>("users");
@@ -15,7 +21,7 @@ function App() {
   const renderView = () => {
     switch (view) {
       case "users":
-        return <UsersPage />;
+        return <UsersPage userRole={user?.role ?? "viewer"} />;
       case "applications":
         return <ApplicationsPage />;
       case "permissions":

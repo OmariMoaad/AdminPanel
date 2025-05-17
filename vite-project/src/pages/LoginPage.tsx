@@ -1,7 +1,14 @@
 import { useState } from "react";
 
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: "admin" | "viewer";
+};
+
 type Props = {
-  onLoginSuccess: (user: { id: number; name: string; email: string }) => void;
+  onLoginSuccess: (user: User) => void;
 };
 
 export default function LoginPage({ onLoginSuccess }: Props) {
@@ -24,7 +31,7 @@ export default function LoginPage({ onLoginSuccess }: Props) {
         return;
       }
 
-      const user = await res.json();
+      const user: User = await res.json();
       onLoginSuccess(user);
     } catch (err) {
       setError("Login error");

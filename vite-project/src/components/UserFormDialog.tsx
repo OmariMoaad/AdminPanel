@@ -18,6 +18,7 @@ type User = {
   email: string;
   role: "admin" | "viewer";
   isActive: boolean;
+  password?: string;
 };
 
 type Props = {
@@ -38,17 +39,19 @@ export default function UserFormDialog({
     email: "",
     role: "viewer",
     isActive: true,
+    password: "",
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({ ...initialData, password: "" });
     } else {
       setFormData({
         name: "",
         email: "",
         role: "viewer",
         isActive: true,
+        password: "",
       });
     }
   }, [initialData]);
@@ -58,7 +61,11 @@ export default function UserFormDialog({
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    const dataToSubmit = { ...formData };
+    if (initialData) {
+      delete dataToSubmit.password;
+    }
+    onSave(dataToSubmit);
   };
 
   return (
@@ -79,6 +86,16 @@ export default function UserFormDialog({
             onChange={(e) => handleChange("email", e.target.value)}
           />
         </div>
+        {!initialData && (
+          <div>
+            <Label>Password</Label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+            />
+          </div>
+        )}
         <div>
           <Label>Role</Label>
           <Select

@@ -1,20 +1,48 @@
 // src/pages/ManageUserPage.tsx
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// Example: Using a basic form for adding a user.
-export default function ManageUserPage({ user }: { user?: any }) {
+type ManageUserProps = {
+  user?: {
+    id?: number;
+    name: string;
+    email: string;
+    role: "admin" | "viewer";
+    isActive: boolean;
+    password?: string;
+  };
+  onSave: (user: {
+    id?: number;
+    name: string;
+    email: string;
+    role: "admin" | "viewer";
+    isActive: boolean;
+    password?: string;
+  }) => void;
+  onCancel: () => void;
+};
+
+export default function ManageUserPage({
+  user,
+  onSave,
+  onCancel,
+}: ManageUserProps) {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [role, setRole] = useState(user?.role || "admin");
-  const [isActive, setIsActive] = useState(user?.isActive || true);
+  const [role, setRole] = useState<"admin" | "viewer">(user?.role || "admin");
+  const [isActive, setIsActive] = useState(user?.isActive ?? true);
+  const [password, setPassword] = useState(user?.password || "");
 
-  const handleSave = () => {
-    // Save or update logic
-    console.log("User saved:", { name, email, role, isActive });
-    // Call an API or update state for real data
+  const handleSubmit = () => {
+    const payload = { name, email, role, isActive, password };
+    if (user?.id) {
+      onSave({ ...payload, id: user.id });
+    } else {
+      onSave(payload);
+    }
   };
 
   return (
@@ -29,10 +57,21 @@ export default function ManageUserPage({ user }: { user?: any }) {
         <Label>Email</Label>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} />
 
+        {!user && (
+          <>
+            <Label>Password</Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </>
+        )}
+
         <Label>Role</Label>
         <select
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) => setRole(e.target.value as "admin" | "viewer")}
           className="w-full border rounded p-2"
         >
           <option value="admin">Admin</option>
@@ -40,15 +79,21 @@ export default function ManageUserPage({ user }: { user?: any }) {
         </select>
 
         <Label>Status</Label>
-        <input
-          type="checkbox"
-          checked={isActive}
-          onChange={(e) => setIsActive(e.target.checked)}
-        />
-        <span>{isActive ? "Active" : "Inactive"}</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+          />
+          <span>{isActive ? "Active" : "Inactive"}</span>
+        </div>
       </div>
-      <div className="flex justify-end">
-        <Button onClick={handleSave}>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>
           {user ? "Save Changes" : "Create User"}
         </Button>
       </div>
