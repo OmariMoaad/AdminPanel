@@ -10,58 +10,120 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import PermissionFormDialog from "@/components/PermissionFormDialog";
 
 type User = {
   id: number;
   name: string;
   email: string;
-  role: "admin" | "viewer";
-  isActive: boolean;
 };
 
-const API_BASE_URL = "http://localhost:3000"; // Adjust based on your backend URL
+type Application = {
+  id: number;
+  name: string;
+};
 
-export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]); // Initialize as empty array
+type Permission = {
+  id: number;
+  userId: number;
+  applicationId: number;
+  role: "viewer" | "admin";
+};
+
+const API_BASE_URL = "http://localhost:3000";
+
+export default function PermissionsPage() {
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [apps, setApps] = useState<Application[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch users on mount
+  // Fetch users, apps, and permissions on mount
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/user`);
-        // Validate response data
-        if (Array.isArray(response.data)) {
-          setUsers(response.data);
-        } else {
-          console.error("Expected an array, got:", response.data);
-          setError("Invalid data format from server");
+        const [usersResponse, appsResponse, permissionsResponse] =
+          await Promise.all([
+            axios.get(`${API_BASE_URL}/user`),
+            axios.get(`${API_BASE_URL}/application`),
+            axios.get(`${API_BASE_URL}/permission`),
+          ]);
+        console.log("Fetched users:", usersResponse.data); // Debug
+        console.log("Fetched apps:", appsResponse.data); // Debug
+        console.log("Fetched permissions:", permissionsResponse.data); // Debug
+        if (
+          !Array.isArray(usersResponse.data) ||
+          !Array.isArray(appsResponse.data) ||
+          !Array.isArray(permissionsResponse.data)
+        ) {
+          throw new Error("Invalid data format from server");
         }
+        setUsers(usersResponse.data);
+        setApps(appsResponse.data);
+        setPermissions(permissionsResponse.data);
       } catch (error) {
-        console.error("Error fetching users:", error);
-        setError("Failed to fetch users");
+        console.error("Error fetching data:", error);
+        setError("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-    fetchUsers();
+    fetchData();
   }, []);
 
-  // Placeholder for user actions (e.g., edit, delete)
-  const handleEditUser = (userId: number) => {
-    console.log(`Edit user with ID: ${userId}`);
-    // Implement edit logic (e.g., open a dialog)
+  const handleOpenDialog = (userId: number) => {
+    console.log("Opening dialog for user ID:", userId); // Debug
+    setSelectedUser(userId);
+    setDialogOpen(true);
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleSavePermission = async (
+    newPermission: Omit<Permission, "id">
+  ) => {
     try {
-      await axios.delete(`${API_BASE_URL}/user/${userId}`);
-      setUsers((prev) => prev.filter((user) => user.id !== userId));
+      console.log("Saving permission:", newPermission); // Debug
+      const existingPerm = permissions.find(
+        (p) =>
+          p.userId === newPermission.userId &&
+          p.applicationId === newPermission.applicationId
+      );
+
+      if (existingPerm) {
+        // Update existing permission
+        const response = await axios.patch(
+          `${API_BASE_URL}/permission/${existingPerm.id}`,
+          newPermission
+        );
+        setPermissions((prev) =>
+          prev.map((p) => (p.id === existingPerm.id ? response.data : p))
+        );
+      } else {
+        // Create new permission
+        const response = await axios.post(
+          `${API_BASE_URL}/permission`,
+          newPermission
+        );
+        setPermissions((prev) => [...prev, response.data]);
+      }
+      setDialogOpen(false);
     } catch (error) {
-      console.error("Error deleting user:", error);
-      setError("Failed to delete user");
+      console.error("Error saving permission:", error);
+      setError("Failed to save permission");
+    }
+  };
+
+  const handleDeletePermission = async (permissionId: number) => {
+    try {
+      console.log("Deleting permission ID:", permissionId); // Debug
+      await axios.delete(`${API_BASE_URL}/permission/${permissionId}`);
+      setPermissions((prev) => prev.filter((p) => p.id !== permissionId));
+    } catch (error) {
+      console.error("Error deleting permission:", error);
+      setError("Failed to delete permission");
     }
   };
 
@@ -75,15 +137,15 @@ export default function UsersPage() {
 
   return (
     <Card className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Users</h2>
+      <h2 className="text-xl font-semibold mb-4">Permissions</h2>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>User</TableHead>
+            {apps.map((app) => (
+              <TableHead key={app.id}>{app.name}</TableHead>
+            ))}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -91,29 +153,35 @@ export default function UsersPage() {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.role}</TableCell>
-              <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
+              {apps.map((app) => {
+                const perm = permissions.find(
+                  (p) => p.userId === user.id && p.applicationId === app.id
+                );
+                return <TableCell key={app.id}>{perm?.role || "-"}</TableCell>;
+              })}
               <TableCell>
-                <Button
-                  size="sm"
-                  className="mr-2"
-                  onClick={() => handleEditUser(user.id)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDeleteUser(user.id)}
-                >
-                  Delete
+                <Button size="sm" onClick={() => handleOpenDialog(user.id)}>
+                  Manage
                 </Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {selectedUser !== null && (
+        <PermissionFormDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onSave={handleSavePermission}
+          onDelete={handleDeletePermission}
+          userId={selectedUser}
+          existingPermissions={permissions.filter(
+            (p) => p.userId === selectedUser
+          )}
+          apps={apps}
+        />
+      )}
     </Card>
   );
 }

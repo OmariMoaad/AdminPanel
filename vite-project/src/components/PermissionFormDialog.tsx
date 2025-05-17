@@ -17,9 +17,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 type Permission = {
-  id?: number; // Optional id for existing permissions
+  id?: number;
   userId: number;
-  applicationId: number; // Changed from appId to applicationId
+  applicationId: number;
   role: "viewer" | "admin";
 };
 
@@ -43,17 +43,18 @@ export default function PermissionFormDialog({
   apps,
 }: Props) {
   const [selectedRoles, setSelectedRoles] = useState<
-    Record<number, "viewer" | "admin" | "remove" | "">
+    Record<number, "viewer" | "admin" | "remove" | "none">
   >({});
 
   useEffect(() => {
-    const initial: Record<number, "viewer" | "admin" | "remove" | ""> = {};
+    const initial: Record<number, "viewer" | "admin" | "remove" | "none"> = {};
     apps.forEach((app) => {
       const existing = existingPermissions.find(
         (p) => p.applicationId === app.id
       );
-      initial[app.id] = existing?.role || "";
+      initial[app.id] = existing?.role || "none";
     });
+    console.log("Initial roles:", initial); // Debug
     setSelectedRoles(initial);
   }, [apps, existingPermissions]);
 
@@ -67,7 +68,7 @@ export default function PermissionFormDialog({
         if (existing?.id) {
           onDelete(existing.id);
         }
-      } else if (role) {
+      } else if (role === "viewer" || role === "admin") {
         onSave({
           userId,
           applicationId,
@@ -90,11 +91,11 @@ export default function PermissionFormDialog({
             <div key={app.id}>
               <Label>{app.name}</Label>
               <Select
-                value={selectedRoles[app.id] || ""}
+                value={selectedRoles[app.id] || "none"}
                 onValueChange={(value) =>
                   setSelectedRoles((prev) => ({
                     ...prev,
-                    [app.id]: value as "viewer" | "admin" | "remove" | "",
+                    [app.id]: value as "viewer" | "admin" | "remove" | "none",
                   }))
                 }
               >
@@ -102,7 +103,7 @@ export default function PermissionFormDialog({
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="remove">Remove</SelectItem>
