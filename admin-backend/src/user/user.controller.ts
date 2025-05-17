@@ -7,11 +7,11 @@ import {
   Param,
   Body,
   ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User as UserModel } from '@prisma/client';
-import { NotFoundException } from '@nestjs/common';
-
+import { LoginDto } from './dto/login.dto';
 
 @Controller('user')
 export class UserController {
@@ -47,5 +47,16 @@ export class UserController {
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<UserModel> {
     return this.userService.delete(id);
+  }
+
+  @Post('login')
+  async login(@Body() loginDto: LoginDto): Promise<UserModel> {
+    const user = await this.userService.login(loginDto.email);
+    if (!user) {
+      throw new NotFoundException(
+        `User with email ${loginDto.email} not found`,
+      );
+    }
+    return user;
   }
 }
