@@ -34,12 +34,12 @@ function App() {
   if (!user) {
     return <LoginPage onLoginSuccess={setUser} />;
   }
-
   return (
     <Layout setView={setView} onLogout={() => setUser(null)}>
       {renderView()}
     </Layout>
   );
+
 }
 
 export default App;
