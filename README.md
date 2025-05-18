@@ -28,8 +28,9 @@ npm run dev
 
 npx cypress open
 
-<img width="1800" alt="admin console log page" src="https://github.com/user-attachments/assets/41bf958f-3fa3-40af-abad-aafa83263040" />
-<img width="1800" alt="users page" src="https://github.com/user-attachments/assets/7b603cd1-acf8-4d63-9734-da452f949b6e" />
-<img width="1800" alt="Capture" src="https://github.com/user-attachments/assets/0831202c-befb-4c44-82b7-f41dea050948" />
+
+<img width="958" alt="admin console log page" src="https://github.com/user-attachments/assets/ad629f60-19f5-424d-92c9-41aa2f5cd54a" />
+<img width="957" alt="users page" src="https://github.com/user-attachments/assets/2d3550e3-9eff-4769-8b1c-456977723ff8" />
+<img width="959" alt="Capture" src="https://github.com/user-attachments/assets/186bbb33-2a59-4ea8-989e-1c3244475488" />
 
 
