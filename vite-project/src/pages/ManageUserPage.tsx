@@ -1,4 +1,3 @@
-// src/pages/ManageUserPage.tsx
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
