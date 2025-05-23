@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import {UsersService} from "@/services/UsersService";
 import {
   Table,
   TableHeader,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import UserFormDialog from "@/components/UserFormDialog";
 
-type User = {
+export type User = {
   id?: number;
   name: string;
   email: string;
@@ -216,7 +217,6 @@ export default function UsersPage({ userRole }: Props) {
       <UserFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSave={handleSave}
         initialData={editingUser}
       />
     </Card>

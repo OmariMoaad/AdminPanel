@@ -11,27 +11,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-
-type User = {
-  id?: number;
-  name: string;
-  email: string;
-  role: "admin" | "viewer";
-  isActive: boolean;
-  password?: string;
-};
+import { UsersService } from "@/services/UsersService";
+import type { User } from "@/pages/UsersPage";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (user: User) => void;
   initialData: User | null;
 };
 
 export default function UserFormDialog({
   open,
   onClose,
-  onSave,
+  
   initialData,
 }: Props) {
   const [formData, setFormData] = useState<User>({
@@ -43,9 +35,7 @@ export default function UserFormDialog({
   });
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...initialData, password: "" });
-    } else {
+    
       setFormData({
         name: "",
         email: "",
@@ -53,8 +43,8 @@ export default function UserFormDialog({
         isActive: true,
         password: "",
       });
-    }
-  }, [initialData]);
+    }, [open]);
+;
 
   const handleChange = (field: keyof User, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -65,7 +55,12 @@ export default function UserFormDialog({
     if (initialData) {
       delete dataToSubmit.password;
     }
-    onSave(dataToSubmit);
+    UsersService.create(dataToSubmit).then((user) => {
+      console.log(user);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
   };
 
   return (
