@@ -35,6 +35,8 @@ export default function UserFormDialog({
     password: "",
   });
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
     if (initialData) {
       setFormData({ ...initialData, password: "" });
@@ -47,6 +49,7 @@ export default function UserFormDialog({
         password: "",
       });
     }
+    setErrorMessage(null); // reset error message on open
   }, [initialData, open]);
 
   const handleChange = (field: keyof User, value: any) => {
@@ -65,6 +68,7 @@ export default function UserFormDialog({
       onClose();
     } catch (error) {
       console.error("Failed to submit form", error);
+      setErrorMessage("Échec de l'enregistrement. Veuillez réessayer.");
     }
   };
 
@@ -118,7 +122,10 @@ export default function UserFormDialog({
             onCheckedChange={(value) => handleChange("isActive", value)}
           />
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          {errorMessage && (
+            <span className="text-sm text-red-600">{errorMessage}</span>
+          )}
           <Button onClick={handleSubmit}>Save</Button>
         </div>
       </DialogContent>
