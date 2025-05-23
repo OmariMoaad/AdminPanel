@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {UsersService} from "@/services/UsersService";
+import { UsersService } from "@/services/UsersService";
 import {
   Table,
   TableHeader,
@@ -43,13 +43,14 @@ export default function UsersPage({ userRole }: Props) {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const service = new UsersService();
+
   const fetchUsers = async () => {
-    const res = await fetch("http://localhost:3000/user");
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await service.findAll();
       setUsers(data);
-    } else {
-      console.error("Failed to fetch users");
+    } catch (err) {
+      console.error("Failed to fetch users", err);
     }
   };
 
@@ -57,44 +58,12 @@ export default function UsersPage({ userRole }: Props) {
     fetchUsers();
   }, []);
 
-  const handleSave = async (user: User) => {
-    const isEditing = Boolean(user.id);
-    const method = isEditing ? "PUT" : "POST";
-    const url = isEditing
-      ? `http://localhost:3000/user/${user.id}`
-      : "http://localhost:3000/user";
-
-    const payload = { ...user };
-    if (isEditing) {
-      delete payload.password;
-    }
-
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      console.error("Failed to save user");
-      return;
-    }
-
-    await fetchUsers();
-    setDialogOpen(false);
-  };
-
   const handleDelete = async (id: number) => {
-    const res = await fetch(`http://localhost:3000/user/${id}`, {
-      method: "DELETE",
-    });
-
-    if (res.ok) {
+    try {
+      await service.delete(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-    } else {
-      console.error("Failed to delete user");
+    } catch (err) {
+      console.error("Failed to delete user", err);
     }
   };
 
@@ -218,6 +187,7 @@ export default function UsersPage({ userRole }: Props) {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         initialData={editingUser}
+        onSave={fetchUsers}
       />
     </Card>
   );

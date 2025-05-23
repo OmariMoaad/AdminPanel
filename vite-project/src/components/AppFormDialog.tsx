@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
+import { AppService } from "@/services/AppService";
 
 type App = {
   id: number;
@@ -19,15 +20,15 @@ type App = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (app: App) => void;
   initialData?: App | null;
+  onRefetch: () => void;
 };
 
 export default function AppFormDialog({
   open,
   onClose,
-  onSave,
   initialData,
+  onRefetch,
 }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -42,13 +43,13 @@ export default function AppFormDialog({
     }
   }, [initialData]);
 
-  const handleSubmit = () => {
-    const app: App = {
-      id: initialData?.id || Date.now(),
-      name,
-      description,
-    };
-    onSave(app);
+  const handleSubmit = async () => {
+    if (initialData) {
+      await AppService.update(initialData.id, { name, description });
+    } else {
+      await AppService.create({ name, description });
+    }
+    onRefetch();
     onClose();
   };
 

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { PermissionService } from "@/services/PermissionService";
 
 type Permission = {
   id?: number;
@@ -26,8 +27,6 @@ type Permission = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (permission: Permission) => void;
-  onDelete: (permissionId: number) => void;
   userId: number;
   existingPermissions: Permission[];
   apps: { id: number; name: string }[];
@@ -36,8 +35,6 @@ type Props = {
 export default function PermissionFormDialog({
   open,
   onClose,
-  onSave,
-  onDelete,
   userId,
   existingPermissions,
   apps,
@@ -54,28 +51,29 @@ export default function PermissionFormDialog({
       );
       initial[app.id] = existing?.role || "none";
     });
-    console.log("Initial roles:", initial); // Debug
     setSelectedRoles(initial);
   }, [apps, existingPermissions]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     for (const [appIdStr, role] of Object.entries(selectedRoles)) {
       const applicationId = parseInt(appIdStr);
-      if (role === "remove") {
-        const existing = existingPermissions.find(
-          (p) => p.applicationId === applicationId
-        );
-        if (existing?.id) {
-          onDelete(existing.id);
-        }
-      } else if (role === "viewer" || role === "admin") {
-        onSave({
+      const existing = existingPermissions.find(
+        (p) => p.applicationId === applicationId
+      );
+
+      if (role === "remove" && existing?.id) {
+        await PermissionService.delete(existing.id);
+      } else if ((role === "viewer" || role === "admin") && existing?.id) {
+        await PermissionService.update(existing.id, {
           userId,
           applicationId,
           role,
         });
+      } else if ((role === "viewer" || role === "admin") && !existing) {
+        await PermissionService.create({ userId, applicationId, role });
       }
     }
+
     onClose();
   };
 

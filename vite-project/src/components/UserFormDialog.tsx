@@ -18,13 +18,14 @@ type Props = {
   open: boolean;
   onClose: () => void;
   initialData: User | null;
+  onSave: () => void;
 };
 
 export default function UserFormDialog({
   open,
   onClose,
-  
   initialData,
+  onSave,
 }: Props) {
   const [formData, setFormData] = useState<User>({
     name: "",
@@ -35,7 +36,9 @@ export default function UserFormDialog({
   });
 
   useEffect(() => {
-    
+    if (initialData) {
+      setFormData({ ...initialData, password: "" });
+    } else {
       setFormData({
         name: "",
         email: "",
@@ -43,24 +46,26 @@ export default function UserFormDialog({
         isActive: true,
         password: "",
       });
-    }, [open]);
-;
+    }
+  }, [initialData, open]);
 
   const handleChange = (field: keyof User, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    const dataToSubmit = { ...formData };
-    if (initialData) {
-      delete dataToSubmit.password;
+  const handleSubmit = async () => {
+    try {
+      if (initialData?.id) {
+        const { password, ...dataToUpdate } = formData;
+        await new UsersService().update(initialData.id, dataToUpdate);
+      } else {
+        await UsersService.create(formData);
+      }
+      onSave();
+      onClose();
+    } catch (error) {
+      console.error("Failed to submit form", error);
     }
-    UsersService.create(dataToSubmit).then((user) => {
-      console.log(user);
-    })
-    .catch((error) => {
-      console.error(error);
-    });
   };
 
   return (

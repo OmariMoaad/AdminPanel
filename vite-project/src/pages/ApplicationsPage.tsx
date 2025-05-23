@@ -40,44 +40,6 @@ export default function ApplicationsPage({ userRole }: Props) {
     fetchApps();
   }, []);
 
-  const handleSave = async (app: Partial<App>) => {
-    const isEdit = !!editingApp;
-
-    const res = await fetch(
-      isEdit
-        ? `http://localhost:3000/application/${editingApp?.id}`
-        : "http://localhost:3000/application",
-      {
-        method: isEdit ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: app.name,
-          description: app.description,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      console.error("Failed to save application");
-      return;
-    }
-
-    const updatedApp = await res.json();
-
-    setApps((prev) => {
-      if (isEdit) {
-        return prev.map((a) => (a.id === updatedApp.id ? updatedApp : a));
-      } else {
-        return [...prev, updatedApp];
-      }
-    });
-
-    setDialogOpen(false);
-    setEditingApp(null);
-  };
-
   const handleDelete = async (id: number) => {
     await fetch(`http://localhost:3000/application/${id}`, {
       method: "DELETE",
@@ -126,7 +88,6 @@ export default function ApplicationsPage({ userRole }: Props) {
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
-
         <TableBody>
           {filteredApps.map((app) => (
             <TableRow key={app.id}>
@@ -162,8 +123,8 @@ export default function ApplicationsPage({ userRole }: Props) {
           setDialogOpen(false);
           setEditingApp(null);
         }}
-        onSave={handleSave}
         initialData={editingApp}
+        onRefetch={fetchApps}
       />
     </Card>
   );

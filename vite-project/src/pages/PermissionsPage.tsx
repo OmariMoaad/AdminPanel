@@ -12,17 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PermissionFormDialog from "@/components/PermissionFormDialog";
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-};
-
-type Application = {
-  id: number;
-  name: string;
-};
-
+type User = { id: number; name: string; email: string };
+type Application = { id: number; name: string };
 type Permission = {
   id: number;
   userId: number;
@@ -45,35 +36,26 @@ export default function PermissionsPage({ userRole }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [usersRes, appsRes, permissionsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/user`),
+        axios.get(`${API_BASE_URL}/application`),
+        axios.get(`${API_BASE_URL}/permission`),
+      ]);
+      setUsers(usersRes.data);
+      setApps(appsRes.data);
+      setPermissions(permissionsRes.data);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [usersResponse, appsResponse, permissionsResponse] =
-          await Promise.all([
-            axios.get(`${API_BASE_URL}/user`),
-            axios.get(`${API_BASE_URL}/application`),
-            axios.get(`${API_BASE_URL}/permission`),
-          ]);
-
-        if (
-          !Array.isArray(usersResponse.data) ||
-          !Array.isArray(appsResponse.data) ||
-          !Array.isArray(permissionsResponse.data)
-        ) {
-          throw new Error("Invalid data format from server");
-        }
-
-        setUsers(usersResponse.data);
-        setApps(appsResponse.data);
-        setPermissions(permissionsResponse.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -82,55 +64,8 @@ export default function PermissionsPage({ userRole }: Props) {
     setDialogOpen(true);
   };
 
-  const handleSavePermission = async (
-    newPermission: Omit<Permission, "id">
-  ) => {
-    try {
-      const existingPerm = permissions.find(
-        (p) =>
-          p.userId === newPermission.userId &&
-          p.applicationId === newPermission.applicationId
-      );
-
-      if (existingPerm) {
-        const response = await axios.patch(
-          `${API_BASE_URL}/permission/${existingPerm.id}`,
-          newPermission
-        );
-        setPermissions((prev) =>
-          prev.map((p) => (p.id === existingPerm.id ? response.data : p))
-        );
-      } else {
-        const response = await axios.post(
-          `${API_BASE_URL}/permission`,
-          newPermission
-        );
-        setPermissions((prev) => [...prev, response.data]);
-      }
-      setDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving permission:", error);
-      setError("Failed to save permission");
-    }
-  };
-
-  const handleDeletePermission = async (permissionId: number) => {
-    try {
-      await axios.delete(`${API_BASE_URL}/permission/${permissionId}`);
-      setPermissions((prev) => prev.filter((p) => p.id !== permissionId));
-    } catch (error) {
-      console.error("Error deleting permission:", error);
-      setError("Failed to delete permission");
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <Card className="p-4">
@@ -173,9 +108,10 @@ export default function PermissionsPage({ userRole }: Props) {
       {selectedUser !== null && (
         <PermissionFormDialog
           open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          onSave={handleSavePermission}
-          onDelete={handleDeletePermission}
+          onClose={() => {
+            setDialogOpen(false);
+            fetchData(); // reload after closing
+          }}
           userId={selectedUser}
           existingPermissions={permissions.filter(
             (p) => p.userId === selectedUser
