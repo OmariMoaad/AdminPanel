@@ -2,8 +2,7 @@
 /dist
 /node_modules
 /build
-dev.db
-
+/prisma/dev.db
 # Logs
 logs
 *.log
