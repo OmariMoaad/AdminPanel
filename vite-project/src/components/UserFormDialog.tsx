@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { UsersService, type User } from "@/services/UsersService";
+import { toast } from "sonner"; 
 
 type Props = {
   open: boolean;
@@ -61,31 +62,40 @@ export default function UserFormDialog({
     setLoading(true);
 
     try {
+      if (!formData.email) {
+        setErrorMessage("Email is required");
+        setLoading(false);
+        return;
+      }
+
       if (initialData?.id) {
-        // Exclude password if empty during update
         const updateData = { ...formData };
         if (!formData.password) {
           delete updateData.password;
         }
         await new UsersService().update(initialData.id, updateData);
+        toast.success("Utilisateur mis à jour avec succès");
       } else {
         if (!formData.password) {
-          setErrorMessage("Password is required for new users");
+          setErrorMessage("Password is required");
           setLoading(false);
           return;
         }
         await UsersService.create(formData);
+        toast.success("Nouvel utilisateur créé avec succès");
       }
+
       onSave();
       onClose();
     } catch (error) {
       console.error("Failed to submit form", error);
-      setErrorMessage("Échec de l'enregistrement. Veuillez réessayer.");
+      setErrorMessage("Échec de l'enregistrement.");
+      toast.error("Échec de l'enregistrement");
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="space-y-4">
@@ -104,16 +114,20 @@ export default function UserFormDialog({
             onChange={(e) => handleChange("email", e.target.value)}
           />
         </div>
-        {!initialData && (
-          <div>
-            <Label>Password</Label>
-            <Input
-              type="password"
-              value={formData.password || ""}
-              onChange={(e) => handleChange("password", e.target.value)}
-            />
-          </div>
-        )}
+        <div>
+          <Label>
+            Password
+            {initialData ? " (laisser vide pour ne pas changer)" : ""}
+          </Label>
+          <Input
+            type="password"
+            value={formData.password || ""}
+            onChange={(e) => handleChange("password", e.target.value)}
+            placeholder={
+              initialData ? "Laissez vide pour ne pas modifier" : undefined
+            }
+          />
+        </div>
         <div>
           <Label>Role</Label>
           <Select

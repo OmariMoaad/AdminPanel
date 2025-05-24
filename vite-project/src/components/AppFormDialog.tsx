@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { AppService } from "@/services/AppService";
+import { toast } from "sonner"; // ← Import toast
 
 type App = {
   id: number;
@@ -54,14 +55,19 @@ export default function AppFormDialog({
           name: name.trim(),
           description: description.trim(),
         });
+        toast.success("Application mise à jour avec succès");
       } else {
         await AppService.create({
           name: name.trim(),
           description: description.trim(),
         });
+        toast.success("Nouvelle application créée avec succès");
       }
       onRefetch();
       onClose();
+    } catch (err) {
+      console.error("Erreur lors de la soumission :", err);
+      toast.error("Échec de l'enregistrement");
     } finally {
       setLoading(false);
     }
