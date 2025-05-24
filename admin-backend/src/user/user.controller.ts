@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { UserService } from './user.service';
 import { User as UserModel } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
@@ -36,6 +37,10 @@ export class UserController {
 
   @Post()
   async create(@Body() userData: UserModel): Promise<UserModel> {
+    if (userData.password) {
+      const saltRounds = 10;
+      userData.password = await bcrypt.hash(userData.password, saltRounds);
+    }
     return this.userService.create(userData);
   }
 
@@ -44,6 +49,10 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Body() userData: UserModel,
   ): Promise<UserModel> {
+    if (userData.password) {
+      const saltRounds = 10;
+      userData.password = await bcrypt.hash(userData.password, saltRounds);
+    }
     return this.userService.update(id, userData);
   }
 
