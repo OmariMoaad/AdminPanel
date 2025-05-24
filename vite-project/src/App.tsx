@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Layout from "@/app/layout";
 import UsersPage from "@/pages/UsersPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
@@ -8,15 +8,32 @@ import LoginPage from "@/pages/LoginPage";
 type View = "users" | "applications" | "permissions";
 
 type User = {
-  id: number;
-  name: string;
-  email: string;
+  id: string;
   role: "admin" | "viewer";
 };
 
 function App() {
   const [view, setView] = useState<View>("users");
   const [user, setUser] = useState<User | null>(null);
+
+  // Load user from token at startup
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const base64Payload = token.split(".")[1];
+        const payload = JSON.parse(atob(base64Payload));
+        setUser({ id: payload.sub, role: payload.role });
+      } catch {
+        localStorage.removeItem("token");
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
 
   const renderView = () => {
     switch (view) {
@@ -34,12 +51,12 @@ function App() {
   if (!user) {
     return <LoginPage onLoginSuccess={setUser} />;
   }
+
   return (
-    <Layout setView={setView} onLogout={() => setUser(null)}>
+    <Layout setView={setView} onLogout={handleLogout}>
       {renderView()}
     </Layout>
   );
-
 }
 
 export default App;

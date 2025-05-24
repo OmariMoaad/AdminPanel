@@ -1,23 +1,40 @@
+import { getHeaders } from "@/utils/auth";
+
+type AppData = {
+  name: string;
+  description: string;
+};
+
 export const AppService = {
-  async create(data: { name: string; description: string }) {
+  async getAll() {
+    const res = await fetch("http://localhost:3000/application", {
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  async create(data: AppData) {
     const res = await fetch("http://localhost:3000/application", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
 
-  async update(id: number, data: { name: string; description: string }) {
+  async update(id: number, data: AppData) {
     const res = await fetch(`http://localhost:3000/application/${id}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
+  },
+
+  async delete(id: number) {
+    await fetch(`http://localhost:3000/application/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
   },
 };

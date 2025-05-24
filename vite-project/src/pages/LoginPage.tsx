@@ -1,9 +1,7 @@
 import { useState } from "react";
 
 type User = {
-  id: number;
-  name: string;
-  email: string;
+  id: string;
   role: "admin" | "viewer";
 };
 
@@ -19,7 +17,7 @@ export default function LoginPage({ onLoginSuccess }: Props) {
   const handleLogin = async () => {
     setError("");
     try {
-      const res = await fetch("http://localhost:3000/user/login", {
+      const res = await fetch("http://localhost:3000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -31,7 +29,20 @@ export default function LoginPage({ onLoginSuccess }: Props) {
         return;
       }
 
-      const user: User = await res.json();
+      const { access_token } = await res.json();
+
+      // Store token
+      localStorage.setItem("token", access_token);
+
+      // Decode token (JWT payload is base64-encoded JSON)
+      const base64Payload = access_token.split(".")[1];
+      const payload = JSON.parse(atob(base64Payload));
+
+      const user: User = {
+        id: payload.sub,
+        role: payload.role,
+      };
+
       onLoginSuccess(user);
     } catch (err) {
       setError("Login error");

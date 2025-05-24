@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import AppFormDialog from "@/components/AppFormDialog";
+import { AppService } from "@/services/AppService";
 
 type App = {
   id: number;
@@ -31,8 +32,7 @@ export default function ApplicationsPage({ userRole }: Props) {
   const isViewer = userRole === "viewer";
 
   const fetchApps = async () => {
-    const res = await fetch("http://localhost:3000/application");
-    const data = await res.json();
+    const data = await AppService.getAll();
     setApps(data);
   };
 
@@ -41,9 +41,7 @@ export default function ApplicationsPage({ userRole }: Props) {
   }, []);
 
   const handleDelete = async (id: number) => {
-    await fetch(`http://localhost:3000/application/${id}`, {
-      method: "DELETE",
-    });
+    await AppService.delete(id);
     setApps((prev) => prev.filter((a) => a.id !== id));
   };
 

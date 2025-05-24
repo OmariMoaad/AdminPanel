@@ -11,7 +11,10 @@ import { ApplicationService } from './application.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { Application } from '@prisma/client';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('application')
 export class ApplicationController {
   constructor(private readonly applicationService: ApplicationService) {}

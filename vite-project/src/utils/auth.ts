@@ -13,3 +13,11 @@ export const isAuthenticated = () => {
 export const logout = () => {
   localStorage.removeItem("token");
 };
+
+export const getHeaders = (): HeadersInit => {
+  const token = getToken();
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+};

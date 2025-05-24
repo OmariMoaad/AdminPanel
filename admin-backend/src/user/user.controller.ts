@@ -12,7 +12,10 @@ import {
 import { UserService } from './user.service';
 import { User as UserModel } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

@@ -32,6 +32,7 @@ export default function AppFormDialog({
 }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -41,16 +42,29 @@ export default function AppFormDialog({
       setName("");
       setDescription("");
     }
-  }, [initialData]);
+  }, [initialData, open]);
 
   const handleSubmit = async () => {
-    if (initialData) {
-      await AppService.update(initialData.id, { name, description });
-    } else {
-      await AppService.create({ name, description });
+    if (!name.trim() || !description.trim()) return;
+
+    setLoading(true);
+    try {
+      if (initialData) {
+        await AppService.update(initialData.id, {
+          name: name.trim(),
+          description: description.trim(),
+        });
+      } else {
+        await AppService.create({
+          name: name.trim(),
+          description: description.trim(),
+        });
+      }
+      onRefetch();
+      onClose();
+    } finally {
+      setLoading(false);
     }
-    onRefetch();
-    onClose();
   };
 
   return (
@@ -65,22 +79,30 @@ export default function AppFormDialog({
         <div className="space-y-4">
           <div>
             <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+            />
           </div>
           <div>
             <Label>Description</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={loading}
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !name.trim() || !description.trim()}
+          >
             {initialData ? "Update" : "Create"}
           </Button>
         </DialogFooter>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Table,
   TableHeader,
@@ -11,8 +10,10 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PermissionFormDialog from "@/components/PermissionFormDialog";
+import { PermissionService } from "@/services/PermissionService";
+import { AppService } from "@/services/AppService";
+import { UsersService, type User } from "@/services/UsersService";
 
-type User = { id: number; name: string; email: string };
 type Application = { id: number; name: string };
 type Permission = {
   id: number;
@@ -24,8 +25,6 @@ type Permission = {
 type Props = {
   userRole: "admin" | "viewer";
 };
-
-const API_BASE_URL = "http://localhost:3000";
 
 export default function PermissionsPage({ userRole }: Props) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -39,14 +38,14 @@ export default function PermissionsPage({ userRole }: Props) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, appsRes, permissionsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/user`),
-        axios.get(`${API_BASE_URL}/application`),
-        axios.get(`${API_BASE_URL}/permission`),
+      const [usersData, appsData, permissionsData] = await Promise.all([
+        UsersService.findAll(),
+        AppService.getAll(),
+        PermissionService.list(),
       ]);
-      setUsers(usersRes.data);
-      setApps(appsRes.data);
-      setPermissions(permissionsRes.data);
+      setUsers(usersData);
+      setApps(appsData);
+      setPermissions(permissionsData);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data");
@@ -110,7 +109,7 @@ export default function PermissionsPage({ userRole }: Props) {
           open={dialogOpen}
           onClose={() => {
             setDialogOpen(false);
-            fetchData(); // reload after closing
+            fetchData();
           }}
           userId={selectedUser}
           existingPermissions={permissions.filter(

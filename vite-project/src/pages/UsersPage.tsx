@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UsersService } from "@/services/UsersService";
+import { UsersService, type User as UserType } from "@/services/UsersService";
 import {
   Table,
   TableHeader,
@@ -20,24 +20,14 @@ import {
 } from "@/components/ui/select";
 import UserFormDialog from "@/components/UserFormDialog";
 
-export type User = {
-  id?: number;
-  name: string;
-  email: string;
-  role: "admin" | "viewer";
-  isActive: boolean;
-  createdAt?: string;
-  password?: string;
-};
-
 type Props = {
   userRole: "admin" | "viewer";
 };
 
 export default function UsersPage({ userRole }: Props) {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserType | null>(null);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -47,7 +37,7 @@ export default function UsersPage({ userRole }: Props) {
 
   const fetchUsers = async () => {
     try {
-      const data = await service.findAll();
+      const data = await UsersService.findAll();
       setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users", err);
@@ -59,11 +49,13 @@ export default function UsersPage({ userRole }: Props) {
   }, []);
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       await service.delete(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch (err) {
       console.error("Failed to delete user", err);
+      alert("Échec de la suppression de l'utilisateur.");
     }
   };
 
@@ -72,7 +64,7 @@ export default function UsersPage({ userRole }: Props) {
     setDialogOpen(true);
   };
 
-  const openEdit = (user: User) => {
+  const openEdit = (user: UserType) => {
     setEditingUser(user);
     setDialogOpen(true);
   };
@@ -172,7 +164,7 @@ export default function UsersPage({ userRole }: Props) {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleDelete(user.id!)}
+                  onClick={() => handleDelete(user.id)}
                   disabled={userRole === "viewer"}
                 >
                   Delete

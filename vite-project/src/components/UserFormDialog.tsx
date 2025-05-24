@@ -11,8 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { UsersService } from "@/services/UsersService";
-import type { User } from "@/pages/UsersPage";
+import { UsersService, type User } from "@/services/UsersService";
 
 type Props = {
   open: boolean;
@@ -27,7 +26,7 @@ export default function UserFormDialog({
   initialData,
   onSave,
 }: Props) {
-  const [formData, setFormData] = useState<User>({
+  const [formData, setFormData] = useState<Partial<User>>({
     name: "",
     email: "",
     role: "viewer",
@@ -36,6 +35,7 @@ export default function UserFormDialog({
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -49,19 +49,31 @@ export default function UserFormDialog({
         password: "",
       });
     }
-    setErrorMessage(null); // reset error message on open
+    setErrorMessage(null);
   }, [initialData, open]);
 
-  const handleChange = (field: keyof User, value: any) => {
+  const handleChange = (field: keyof User | "password", value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
+    setErrorMessage(null);
+    setLoading(true);
+
     try {
       if (initialData?.id) {
-        const { password, ...dataToUpdate } = formData;
-        await new UsersService().update(initialData.id, dataToUpdate);
+        // Exclude password if empty during update
+        const updateData = { ...formData };
+        if (!formData.password) {
+          delete updateData.password;
+        }
+        await new UsersService().update(initialData.id, updateData);
       } else {
+        if (!formData.password) {
+          setErrorMessage("Password is required for new users");
+          setLoading(false);
+          return;
+        }
         await UsersService.create(formData);
       }
       onSave();
@@ -69,6 +81,8 @@ export default function UserFormDialog({
     } catch (error) {
       console.error("Failed to submit form", error);
       setErrorMessage("Échec de l'enregistrement. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +92,7 @@ export default function UserFormDialog({
         <div>
           <Label>Name</Label>
           <Input
-            value={formData.name}
+            value={formData.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
           />
         </div>
@@ -86,7 +100,7 @@ export default function UserFormDialog({
           <Label>Email</Label>
           <Input
             type="email"
-            value={formData.email}
+            value={formData.email || ""}
             onChange={(e) => handleChange("email", e.target.value)}
           />
         </div>
@@ -95,7 +109,7 @@ export default function UserFormDialog({
             <Label>Password</Label>
             <Input
               type="password"
-              value={formData.password}
+              value={formData.password || ""}
               onChange={(e) => handleChange("password", e.target.value)}
             />
           </div>
@@ -103,7 +117,7 @@ export default function UserFormDialog({
         <div>
           <Label>Role</Label>
           <Select
-            value={formData.role}
+            value={formData.role || "viewer"}
             onValueChange={(value) => handleChange("role", value)}
           >
             <SelectTrigger>
@@ -118,7 +132,7 @@ export default function UserFormDialog({
         <div className="flex items-center gap-2">
           <Label>Status</Label>
           <Switch
-            checked={formData.isActive}
+            checked={formData.isActive ?? true}
             onCheckedChange={(value) => handleChange("isActive", value)}
           />
         </div>
@@ -126,7 +140,9 @@ export default function UserFormDialog({
           {errorMessage && (
             <span className="text-sm text-red-600">{errorMessage}</span>
           )}
-          <Button onClick={handleSubmit}>Save</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
